@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>東京ディズニーリゾート 体験ログ</title>
-  <!-- 相対パス ./ で指定することでGitHub Pagesのサブディレクトリでも正しく読み込まれます -->
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
@@ -13,8 +12,8 @@
       <h1>✨ 東京ディズニーリゾート<br>体験ログ</h1>
     </header>
 
-    <!-- 基本設定セクション -->
-    <section class="card">
+    <!-- 1枚目: 基本設定 -->
+    <section id="step-1" class="card">
       <div class="form-group">
         <label for="visit-date">日付</label>
         <input type="date" id="visit-date">
@@ -30,15 +29,15 @@
           <label><input type="radio" name="park" value="tds"> 東京ディズニーシー</label>
         </div>
       </div>
-      <button id="btn-start" class="btn btn-primary">今日のログを開始</button>
+      <button id="btn-to-step2" class="btn btn-primary">今日のログを開始</button>
       <div class="btn-sub-group">
         <button type="button" class="btn btn-secondary">過去のログを見る</button>
         <button type="button" class="btn btn-secondary">管理者設定</button>
       </div>
     </section>
 
-    <!-- 立ち上げ時間の記録 -->
-    <section class="card">
+    <!-- 2枚目: 立ち上げ時間の記録 (初期状態は非表示) -->
+    <section id="step-2" class="card hidden">
       <h2>立ち上げ時間の記録</h2>
       <p class="description">「立って待つ状態」になった時間を記録します。</p>
       <div class="form-group">
@@ -46,13 +45,13 @@
         <input type="time" id="standup-time">
       </div>
       <div class="btn-inline-group">
-        <button type="button" class="btn btn-action">記録して開始</button>
-        <button type="button" class="btn btn-outline">すでに立って待っています</button>
+        <button type="button" id="btn-to-step3-record" class="btn btn-action">記録して開始</button>
+        <button type="button" id="btn-to-step3-skip" class="btn btn-outline">すでに立って待っています</button>
       </div>
     </section>
 
-    <!-- 体験ログ -->
-    <section class="card">
+    <!-- 3枚目: 体験ログ (初期状態は非表示) -->
+    <section id="step-3" class="card hidden">
       <h2>体験ログ</h2>
 
       <!-- DPA / パス取得記録 -->

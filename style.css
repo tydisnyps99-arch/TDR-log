@@ -41,6 +41,11 @@ body {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
+/* 非表示制御用クラス */
+.hidden {
+  display: none !important;
+}
+
 .card h2 {
   font-size: 1.25rem;
   margin-bottom: 12px;
