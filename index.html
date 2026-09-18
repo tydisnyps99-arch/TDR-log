@@ -3,105 +3,804 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>東京ディズニーリゾート 体験ログ</title>
-  <link rel="stylesheet" href="./style.css">
+  <title>東京ディズニーリゾート 体験ログ Pro</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background-color: #f1f5f9;
+    }
+  </style>
 </head>
-<body>
-  <div class="container">
-    <header class="header">
-      <h1>✨ 東京ディズニーリゾート<br>体験ログ</h1>
-    </header>
+<body class="text-slate-800 pb-20">
 
-    <!-- 1枚目: 基本設定 -->
-    <section id="step-1" class="card">
-      <div class="form-group">
-        <label for="visit-date">日付</label>
-        <input type="date" id="visit-date">
+  <!-- ヘッダー -->
+  <header class="bg-indigo-900 text-white sticky top-0 z-40 shadow-md">
+    <div class="max-w-3xl mx-auto px-4 py-3 flex justify-between items-center">
+      <div class="flex items-center gap-2">
+        <i data-lucide="sparkles" class="text-amber-300 w-6 h-6"></i>
+        <h1 class="font-bold text-lg tracking-wide">TDR インパログ Pro</h1>
       </div>
-      <div class="form-group">
-        <label for="arrival-time">現地到着時間</label>
-        <input type="time" id="arrival-time">
+      <div class="flex items-center gap-2">
+        <button onclick="exportData()" class="text-xs bg-indigo-800 hover:bg-indigo-700 px-2.5 py-1 rounded-lg text-indigo-100 border border-indigo-600 transition flex items-center gap-1">
+          <i data-lucide="download" class="w-3.5 h-3.5"></i> 保存
+        </button>
+        <label class="text-xs bg-indigo-800 hover:bg-indigo-700 px-2.5 py-1 rounded-lg text-indigo-100 border border-indigo-600 transition flex items-center gap-1 cursor-pointer">
+          <i data-lucide="upload" class="w-3.5 h-3.5"></i> 復元
+          <input type="file" id="import-file" class="hidden" accept=".json" onchange="importData(event)">
+        </label>
       </div>
-      <div class="form-group">
-        <label>パーク</label>
-        <div class="radio-group">
-          <label><input type="radio" name="park" value="tdl" checked> 東京ディズニーランド</label>
-          <label><input type="radio" name="park" value="tds"> 東京ディズニーシー</label>
+    </div>
+  </header>
+
+  <main class="max-w-3xl mx-auto px-4 pt-4 space-y-6">
+
+    <!-- パスタイマーセクション -->
+    <section class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
+      <h2 class="font-bold text-slate-800 text-base mb-3 flex items-center gap-2">
+        <i data-lucide="ticket" class="w-5 h-5 text-indigo-600"></i>
+        パス取得管理 & タイマー
+      </h2>
+
+      <!-- パス種別タブ -->
+      <div class="flex bg-slate-100 p-1 rounded-xl mb-4 text-xs font-semibold overflow-x-auto">
+        <button onclick="switchPassTab('dpa_attraction')" id="tab-dpa_attraction" class="flex-1 min-w-[100px] py-2 text-center rounded-lg transition bg-white text-indigo-700 shadow-sm">
+          DPA (アトラクション)
+        </button>
+        <button onclick="switchPassTab('dpa_entertainment')" id="tab-dpa_entertainment" class="flex-1 min-w-[100px] py-2 text-center rounded-lg transition text-slate-600">
+          DPA (エンタメ)
+        </button>
+        <button onclick="switchPassTab('standby')" id="tab-standby" class="flex-1 min-w-[100px] py-2 text-center rounded-lg transition text-slate-600">
+          スタンバイ/PP
+        </button>
+      </div>
+
+      <!-- パスカウントダウン & 入力フォーム -->
+      <div id="pass-panel" class="space-y-4">
+        <div id="timer-display" class="bg-slate-50 border border-slate-200 rounded-xl p-3 flex justify-between items-center">
+          <div>
+            <div class="text-xs text-slate-500 font-medium" id="timer-status-title">次回取得可能まで</div>
+            <div class="text-2xl font-bold text-emerald-600 tracking-tight" id="timer-countdown">取得可能</div>
+          </div>
+          <div class="text-right text-xs text-slate-500 space-y-1" id="timer-info">
+            <div>直前取得: <span id="last-acquired-time" class="font-semibold text-slate-700">なし</span></div>
+            <div>次回可能: <span id="next-available-time" class="font-semibold text-slate-700">--:--</span></div>
+          </div>
         </div>
-      </div>
-      <button id="btn-to-step2" class="btn btn-primary">今日のログを開始</button>
-      <div class="btn-sub-group">
-        <button type="button" class="btn btn-secondary">過去のログを見る</button>
-        <button type="button" class="btn btn-secondary">管理者設定</button>
+
+        <form id="pass-form" onsubmit="handlePassSubmit(event)" class="space-y-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">対象施設 / ショー</label>
+            <select id="pass-facility" class="w-full text-sm p-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white" required>
+            </select>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">取得時間</label>
+              <input type="time" id="pass-acquired-at" class="w-full text-sm p-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none" required>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">利用開始時間</label>
+              <input type="time" id="pass-start-time" class="w-full text-sm p-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none" required>
+            </div>
+          </div>
+
+          <button type="submit" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold shadow-sm transition flex items-center justify-center gap-2">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            パス取得をログに記録
+          </button>
+        </form>
       </div>
     </section>
 
-    <!-- 2枚目: 立ち上げ時間の記録 (初期状態は非表示) -->
-    <section id="step-2" class="card hidden">
-      <h2>立ち上げ時間の記録</h2>
-      <p class="description">「立って待つ状態」になった時間を記録します。</p>
-      <div class="form-group">
-        <label for="standup-time">立ち上げ時間</label>
-        <input type="time" id="standup-time">
+    <!-- 施設体験ログ記録フォーム -->
+    <section class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
+      <h2 class="font-bold text-slate-800 text-base mb-3 flex items-center gap-2">
+        <i data-lucide="pen-tool" class="w-5 h-5 text-indigo-600"></i>
+        体験ログを記録
+      </h2>
+
+      <form id="log-form" onsubmit="handleLogSubmit(event)" class="space-y-4">
+        <div class="relative">
+          <label class="block text-xs font-medium text-slate-600 mb-1">施設・エンターテイメント名（数文字で検索）</label>
+          <input type="text" id="facility-search" placeholder="例: 美女と野獣, そありん, びりーぶ, いんでぃ" class="w-full text-sm p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none" autocomplete="off" required>
+          <div id="suggest-list" class="absolute z-30 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-56 overflow-y-auto hidden"></div>
+        </div>
+
+        <div id="selected-facility-card" class="hidden p-3 bg-indigo-50 border border-indigo-100 rounded-xl text-xs flex justify-between items-center">
+          <div>
+            <span id="selected-park" class="font-bold text-indigo-800"></span> / 
+            <span id="selected-area" class="text-indigo-600"></span>
+            <div id="selected-name" class="font-bold text-sm text-slate-800 mt-0.5"></div>
+          </div>
+          <div class="flex items-center gap-1">
+            <span id="sr-badge" class="hidden px-2 py-1 bg-amber-100 text-amber-800 rounded font-bold border border-amber-300">シングル対象</span>
+            <span id="selected-type" class="px-2 py-1 bg-indigo-200 text-indigo-800 rounded font-bold"></span>
+          </div>
+        </div>
+
+        <div id="time-inputs-container" class="space-y-3">
+          <div class="text-xs text-slate-400 text-center py-2 border border-dashed rounded-lg">
+            施設を選択すると入力項目が表示されます
+          </div>
+        </div>
+
+        <!-- シングルライダー利用フラグ -->
+        <div id="single-rider-option" class="hidden flex items-center gap-2 p-2.5 bg-amber-50 rounded-xl border border-amber-200">
+          <input type="checkbox" id="input-is-single-rider" class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500 border-slate-300">
+          <label for="input-is-single-rider" class="text-xs font-semibold text-amber-900 cursor-pointer">シングルライダーを利用して体験した</label>
+        </div>
+
+        <button type="submit" id="log-submit-btn" disabled class="w-full py-3 bg-slate-300 text-white rounded-xl text-sm font-bold shadow-sm transition flex items-center justify-center gap-2">
+          <i data-lucide="check" class="w-4 h-4"></i>
+          体験ログを保存
+        </button>
+      </form>
+    </section>
+
+    <!-- 本日のサマリー -->
+    <section class="grid grid-cols-3 gap-3">
+      <div class="bg-white p-3 rounded-2xl border border-slate-200 text-center">
+        <div class="text-xs text-slate-500">体験数</div>
+        <div class="text-xl font-bold text-indigo-600 mt-1" id="stat-count">0 <span class="text-xs font-normal text-slate-500">件</span></div>
       </div>
-      <div class="btn-inline-group">
-        <button type="button" id="btn-to-step3-record" class="btn btn-action">記録して開始</button>
-        <button type="button" id="btn-to-step3-skip" class="btn btn-outline">すでに立って待っています</button>
+      <div class="bg-white p-3 rounded-2xl border border-slate-200 text-center">
+        <div class="text-xs text-slate-500">合計待ち時間</div>
+        <div class="text-xl font-bold text-slate-700 mt-1" id="stat-wait">0 <span class="text-xs font-normal text-slate-500">分</span></div>
+      </div>
+      <div class="bg-white p-3 rounded-2xl border border-slate-200 text-center">
+        <div class="text-xs text-slate-500">短縮時間</div>
+        <div class="text-xl font-bold text-emerald-600 mt-1" id="stat-saved">0 <span class="text-xs font-normal text-slate-500">分</span></div>
       </div>
     </section>
 
-    <!-- 3枚目: 体験ログ (初期状態は非表示) -->
-    <section id="step-3" class="card hidden">
-      <h2>体験ログ</h2>
-
-      <!-- DPA / パス取得記録 -->
-      <div class="sub-section">
-        <h3>🎫 DPA / パス取得記録</h3>
-        <div class="form-group">
-          <label for="pass-acquire-time">取得時間</label>
-          <input type="time" id="pass-acquire-time">
-        </div>
-        <div class="form-group">
-          <label for="pass-start-time">利用開始時間（5分刻み）</label>
-          <input type="time" id="pass-start-time" step="300">
-        </div>
-        <div class="form-group">
-          <label for="pass-facility">対象施設 / ショー</label>
-          <select id="pass-facility">
-            <option value="">選択してください</option>
-            <option value="soarin">ソアリン：ファンタスティック・フライト</option>
-            <option value="center">センター・オブ・ジ・アース</option>
-            <option value="beauty">美女と野獣“魔法のものがたり”</option>
-          </select>
-        </div>
-        <button type="button" class="btn btn-action">＋ パス取得をログに記録</button>
+    <!-- タイムライン表示 -->
+    <section class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="font-bold text-slate-800 text-base flex items-center gap-2">
+          <i data-lucide="clock" class="w-5 h-5 text-indigo-600"></i>
+          本日のタイムライン
+        </h2>
+        <button onclick="clearAllLogs()" class="text-xs text-rose-500 hover:text-rose-700 font-medium flex items-center gap-1">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> 全消去
+        </button>
       </div>
 
-      <hr class="divider">
-
-      <!-- 施設体験ログ -->
-      <div class="sub-section">
-        <h3>🎡 体験ログを記録</h3>
-        <div class="form-group">
-          <label for="facility-search">施設・エンターテイメント名（数文字で検索）</label>
-          <input type="text" id="facility-search" placeholder="例: ソアリン">
-        </div>
-        <div class="form-group">
-          <label for="queue-time">並び始め時間</label>
-          <input type="time" id="queue-time">
-        </div>
-        <div class="form-group">
-          <label for="preshow-time">プレショー部屋入場</label>
-          <input type="time" id="preshow-time">
-        </div>
-        <div class="form-group">
-          <label for="ride-time">乗車時間</label>
-          <input type="time" id="ride-time">
-        </div>
+      <div id="timeline-list" class="space-y-3 relative before:absolute before:inset-0 before:left-3.5 before:w-0.5 before:bg-slate-200">
       </div>
     </section>
-  </div>
 
-  <script src="./app.js" defer></script>
+  </main>
+
+  <script>
+    // 施設マスターデータ (シングルライダーフラグ isSingleRider を追加)
+    const FACILITIES_MASTER = [
+      // 東京ディズニーランド アトラクション
+      { id: "TDL-A01", park: "東京ディズニーランド", area: "ワールドバザール", category: "アトラクション", name: "オムニバス", kana: "おむにばす", pattern: "C" },
+      { id: "TDL-A02", park: "東京ディズニーランド", area: "ワールドバザール", category: "アトラクション", name: "ペニーアーケード", kana: "ぺにーあーけーど", pattern: "C" },
+      { id: "TDL-A03", park: "東京ディズニーランド", area: "アドベンチャーランド", category: "アトラクション", name: "ウエスタンリバー鉄道", kana: "うえすたんりばーてつどう", pattern: "C" },
+      { id: "TDL-A04", park: "東京ディズニーランド", area: "アドベンチャーランド", category: "アトラクション", name: "カリブの海賊", kana: "かりぶのかいぞく", pattern: "C" },
+      { id: "TDL-A05", park: "東京ディズニーランド", area: "アドベンチャーランド", category: "アトラクション", name: "ジャングルクルーズ：ワイルドライフ・エクスペディション", kana: "じゃんぐるくるーず", pattern: "C" },
+      { id: "TDL-A06", park: "東京ディズニーランド", area: "アドベンチャーランド", category: "アトラクション", name: "スイスファミリー・ツリーハウス", kana: "すいすふぁみりーつりーはうす", pattern: "C" },
+      { id: "TDL-A07", park: "東京ディズニーランド", area: "アドベンチャーランド", category: "アトラクション", name: "魅惑のチキルーム：スティッチ・プレゼンツ“アロハ・エ・コモ・マイ！”", kana: "みわくのちきるーむすてぃっち", pattern: "C" },
+      { id: "TDL-A08", park: "東京ディズニーランド", area: "ウエスタンランド", category: "アトラクション", name: "ウエスタンランド・シューティングギャラリー", kana: "うえすたんらんどしゅーてぃんぐぎゃらりー", pattern: "C" },
+      { id: "TDL-A09", park: "東京ディズニーランド", area: "ウエスタンランド", category: "アトラクション", name: "カントリーベア・シアター", kana: "かんとりーべあしあたー", pattern: "C" },
+      { id: "TDL-A10", park: "東京ディズニーランド", area: "ウエスタンランド", category: "アトラクション", name: "蒸気船マークトウェイン号", kana: "じょうきせんまーくとぅえいんごう", pattern: "C" },
+      { id: "TDL-A11", park: "東京ディズニーランド", area: "ウエスタンランド", category: "アトラクション", name: "トムソーヤ島いかだ", kana: "とむそーやじまいかだ", pattern: "C" },
+      { id: "TDL-A12", park: "東京ディズニーランド", area: "ウエスタンランド", category: "アトラクション", name: "ビッグサンダー・マウンテン", kana: "びっぐさんだーまうんてん", pattern: "C", isDpa: true },
+      { id: "TDL-A13", park: "東京ディズニーランド", area: "クリッターカントリー", category: "アトラクション", name: "スプラッシュ・マウンテン", kana: "すぷらっしゅまうんてん", pattern: "C", isDpa: true, isSingleRider: true },
+      { id: "TDL-A14", park: "東京ディズニーランド", area: "クリッターカントリー", category: "アトラクション", name: "ビーバーブラザーズのカヌー探険", kana: "びーばーぶらざーずのかぬーたんけん", pattern: "C" },
+      { id: "TDL-A15", park: "東京ディズニーランド", area: "ファンタジーランド", category: "アトラクション", name: "アリスのティーパーティー", kana: "ありすのてぃーぱーてぃー", pattern: "C" },
+      { id: "TDL-A16", park: "東京ディズニーランド", area: "ファンタジーランド", category: "アトラクション", name: "イッツ・ア・スモールワールド", kana: "いっつあすもーるわーるど", pattern: "C" },
+      { id: "TDL-A17", park: "東京ディズニーランド", area: "ファンタジーランド", category: "アトラクション", name: "キャッスルカルーセル", kana: "きゃっするかるーせる", pattern: "C" },
+      { id: "TDL-A18", park: "東京ディズニーランド", area: "ファンタジーランド", category: "アトラクション", name: "白雪姫と七人のこびと", kana: "しらゆきひめとななにんのこびと", pattern: "C" },
+      { id: "TDL-A19", park: "東京ディズニーランド", area: "ファンタジーランド", category: "アトラクション", name: "シンデレラのフェアリーテイル・ホール", kana: "しんでれらのふぇありーているほーる", pattern: "C" },
+      { id: "TDL-A20", park: "東京ディズニーランド", area: "ファンタジーランド", category: "アトラクション", name: "空飛ぶダンボ", kana: "そらとぶだんぼ", pattern: "C" },
+      { id: "TDL-A21", park: "東京ディズニーランド", area: "ファンタジーランド", category: "アトラクション", name: "美女と野獣“魔法のものがたり”", kana: "びじょとやじゅうまほうのものがたり", pattern: "B", isDpa: true },
+      { id: "TDL-A22", park: "東京ディズニーランド", area: "ファンタジーランド", category: "アトラクション", name: "ピーターパン空の旅", kana: "ぴーたーぱんそらのたび", pattern: "C" },
+      { id: "TDL-A23", park: "東京ディズニーランド", area: "ファンタジーランド", category: "アトラクション", name: "ピノキオの冒険旅行", kana: "ぴのきおのぼうけんりょこう", pattern: "C" },
+      { id: "TDL-A24", park: "東京ディズニーランド", area: "ファンタジーランド", category: "アトラクション", name: "プーさんのハニーハント", kana: "ぷーさんのにはにーはんと", pattern: "C", isDpa: true },
+      { id: "TDL-A25", park: "東京ディズニーランド", area: "ファンタジーランド", category: "アトラクション", name: "ホーンテッドマンション", kana: "ほーんてっどまんしょん", pattern: "B", isDpa: true },
+      { id: "TDL-A26", park: "東京ディズニーランド", area: "ファンタジーランド", category: "アトラクション", name: "ミッキーのフィルハーマジック", kana: "みっきーのふぃるはーまじっく", pattern: "A" },
+      { id: "TDL-A27", park: "東京ディズニーランド", area: "トゥーンタウン", category: "アトラクション", name: "ガジェットのゴーコースター", kana: "がじぇっとのごーこーすたー", pattern: "C" },
+      { id: "TDL-A28", park: "東京ディズニーランド", area: "トゥーンタウン", category: "アトラクション", name: "グーフィーのペイント＆プレイハウス", kana: "ぐーふぃーのぺいんとあんどぷれいはうす", pattern: "C" },
+      { id: "TDL-A29", park: "東京ディズニーランド", area: "トゥーンタウン", category: "アトラクション", name: "チップとデールのツリーハウス", kana: "ちっぷとでーるのつりーはうす", pattern: "C" },
+      { id: "TDL-A30", park: "東京ディズニーランド", area: "トゥーンタウン", category: "アトラクション", name: "トゥーンパーク", kana: "とぅーんぱーく", pattern: "C" },
+      { id: "TDL-A31", park: "東京ディズニーランド", area: "トゥーンタウン", category: "アトラクション", name: "ドナルドのボート", kana: "どなるどのぼーと", pattern: "C" },
+      { id: "TDL-A32", park: "東京ディズニーランド", area: "トゥーンタウン", category: "アトラクション", name: "ミニーの家", kana: "みにーのいえ", pattern: "C" },
+      { id: "TDL-A33", park: "東京ディズニーランド", area: "トゥーンタウン", category: "アトラクション", name: "ロジャーラビットのカートゥーンスピン", kana: "ろじゃーらびっとのかーとぅーんすぴん", pattern: "C" },
+      { id: "TDL-A34", park: "東京ディズニーランド", area: "トゥモローランド", category: "アトラクション", name: "スター・ツアーズ：ザ・アドベンチャーズ・コンティニュー", kana: "すたーつあーず", pattern: "C" },
+      { id: "TDL-A35", park: "東京ディズニーランド", area: "トゥモローランド", category: "アトラクション", name: "スティッチ・エンカウンター", kana: "すてぃっちえんかうんたー", pattern: "A" },
+      { id: "TDL-A36", park: "東京ディズニーランド", area: "トゥモローランド", category: "アトラクション", name: "ベイマックスのハッピーライド", kana: "べいまっくすのはっぴーらいど", pattern: "C" },
+      { id: "TDL-A37", park: "東京ディズニーランド", area: "トゥモローランド", category: "アトラクション", name: "モンスターズ・インク“ライド＆ゴーシーク！”", kana: "もんすたーずいんくらいどあんどごーしーく", pattern: "C", isDpa: true },
+
+      // 東京ディズニーシー アトラクション
+      { id: "TDS-A01", park: "東京ディズニーシー", area: "メディテレーニアンハーバー", category: "アトラクション", name: "ソアリン：ファンタスティック・フライト", kana: "そありんふぁんたすてぃっくふらいと", pattern: "B", isDpa: true },
+      { id: "TDS-A02", park: "東京ディズニーシー", area: "メディテレーニアンハーバー", category: "アトラクション", name: "ヴェネツィアン・ゴンドラ", kana: "ヴぇねつぃあんごんどら", pattern: "C" },
+      { id: "TDS-A03", park: "東京ディズニーシー", area: "メディテレーニアンハーバー", category: "アトラクション", name: "フォートレス・エクスプロレーション", kana: "ふぉーとれすえくすぷろれーしょん", pattern: "C" },
+      { id: "TDS-A04", park: "東京ディズニーシー", area: "メディテレーニアンハーバー", category: "アトラクション", name: "フォートレス・エクスプロレーション“ザ・レオナルドチャレンジ”", kana: "ふぉーとれすれおなるどちゃれんじ", pattern: "C" },
+      { id: "TDS-A05", park: "東京ディズニーシー", area: "アメリカンウォーターフロント", category: "アトラクション", name: "タワー・オブ・テラー", kana: "たわーおぶてらー", pattern: "B", isDpa: true },
+      { id: "TDS-A06", park: "東京ディズニーシー", area: "アメリカンウォーターフロント", category: "アトラクション", name: "トイ・ストーリー・マニア！", kana: "といすとーりーまニア", pattern: "C", isDpa: true },
+      { id: "TDS-A07", park: "東京ディズニーシー", area: "アメリカンウォーターフロント", category: "アトラクション", name: "タートル・トーク", kana: "たーとるとーく", pattern: "A" },
+      { id: "TDS-A08", park: "東京ディズニーシー", area: "アメリカンウォーターフロント", category: "アトラクション", name: "ディズニーシー・エレクトリックレールウェイ", departureArea: "アメリカンウォーターフロント", displayName: "ディズニーシー・エレクトリックレールウェイ（アメリカンウォーターフロント発）", kana: "えれくとりっくれーるうぇい", pattern: "C" },
+      { id: "TDS-A09", park: "東京ディズニーシー", area: "アメリカンウォーターフロント", category: "アトラクション", name: "ディズニーシー・トランジットスチーマーライン", departureArea: "アメリカンウォーターフロント", displayName: "ディズニーシー・トランジットスチーマーライン（アメリカンウォーターフロント発）", kana: "とらんじっとすちーまーらいん", pattern: "C" },
+      { id: "TDS-A10", park: "東京ディズニーシー", area: "アメリカンウォーターフロント", category: "アトラクション", name: "ビッグシティ・ヴィークル", kana: "びっぐしてぃヴぃーくる", pattern: "C" },
+      { id: "TDS-A11", park: "東京ディズニーシー", area: "ポートディスカバリー", category: "アトラクション", name: "ニモ＆フレンズ・シーライダー", kana: "にもあんどふれんずしーらいだー", pattern: "A" },
+      { id: "TDS-A12", park: "東京ディズニーシー", area: "ポートディスカバリー", category: "アトラクション", name: "ディズニーシー・エレクトリックレールウェイ", departureArea: "ポートディスカバリー", displayName: "ディズニーシー・エレクトリックレールウェイ（ポートディスカバリー発）", kana: "えれくとりっくれーるうぇい", pattern: "C" },
+      { id: "TDS-A13", park: "東京ディズニーシー", area: "ロストリバーデルタ", category: "アトラクション", name: "インディ・ジョーンズ・アドベンチャー：クリスタルスカルの魔宮", kana: "いんでぃじょーんず", pattern: "C", isDpa: true, isSingleRider: true },
+      { id: "TDS-A14", park: "東京ディズニーシー", area: "ロストリバーデルタ", category: "アトラクション", name: "レイジングスピリッツ", kana: "れいじんぐすぴりっつ", pattern: "C", isDpa: true, isSingleRider: true },
+      { id: "TDS-A15", park: "東京ディズニーシー", area: "ロストリバーデルタ", category: "アトラクション", name: "ディズニーシー・トランジットスチーマーライン", departureArea: "ロストリバーデルタ", displayName: "ディズニーシー・トランジットスチーマーライン（ロストリバーデルタ発）", kana: "とらんじっとすちーまーらいん", pattern: "C" },
+      { id: "TDS-A16", park: "東京ディズニーシー", area: "アラビアンコースト", category: "アトラクション", name: "ジャスミンのフライングカーペット", kana: "じゃすみんのふらいんぐかーぺっと", pattern: "C" },
+      { id: "TDS-A17", park: "東京ディズニーシー", area: "アラビアンコースト", category: "アトラクション", name: "シンドバッド・ストーリーブック・ヴォヤッジ", kana: "しんどばっどすとーりーぶっくヴぉやっじ", pattern: "C" },
+      { id: "TDS-A18", park: "東京ディズニーシー", area: "アラビアンコースト", category: "アトラクション", name: "キャラバンカルーセル", kana: "きゃらばんかるーせる", pattern: "C" },
+      { id: "TDS-A19", park: "東京ディズニーシー", area: "アラビアンコースト", category: "アトラクション", name: "マジックランプシアター", kana: "まじっくらんぷしあたー", pattern: "A" },
+      { id: "TDS-A20", park: "東京ディズニーシー", area: "マーメイドラグーン", category: "アトラクション", name: "アリエルのプレイグラウンド", kana: "ありえるのぷれいぐらうんど", pattern: "C" },
+      { id: "TDS-A21", park: "東京ディズニーシー", area: "マーメイドラグーン", category: "アトラクション", name: "ジャンピン・ジェリーフィッシュ", kana: "じゃんぴんじぇりーふぃっしゅ", pattern: "C" },
+      { id: "TDS-A22", park: "東京ディズニーシー", area: "マーメイドラグーン", category: "アトラクション", name: "スカットルのスクーター", kana: "すかっとるのすくーたー", pattern: "C" },
+      { id: "TDS-A23", park: "東京ディズニーシー", area: "マーメイドラグーン", category: "アトラクション", name: "ブローフィッシュ・バルーンレース", kana: "ぶろーふぃっしゅばるーんれーす", pattern: "C" },
+      { id: "TDS-A24", park: "東京ディズニーシー", area: "マーメイドラグーン", category: "アトラクション", name: "ワールプール", kana: "わーるぷーる", pattern: "C" },
+      { id: "TDS-A25", park: "東京ディズニーシー", area: "マーメイドラグーン", category: "アトラクション", name: "マーメイドラグーンシアター", kana: "まーめいどらぐーんしあたー", pattern: "C" },
+      { id: "TDS-A26", park: "東京ディズニーシー", area: "マーメイドラグーン", category: "アトラクション", name: "フランダーのフライングフィッシュコースター", kana: "ふらんだーのふらいんぐふぃっしゅこーすたー", pattern: "C" },
+      { id: "TDS-A27", park: "東京ディズニーシー", area: "ミステリアスアイランド", category: "アトラクション", name: "センター・オブ・ジ・アース", kana: "せんたーおぶじあーす", pattern: "B", isDpa: true },
+      { id: "TDS-A28", park: "東京ディズニーシー", area: "ミステリアスアイランド", category: "アトラクション", name: "海底2万マイル", kana: "かいていにまんまいる", pattern: "C" },
+      { id: "TDS-A29", park: "東京ディズニーシー", area: "ファンタジースプリングス", category: "アトラクション", name: "アナとエルサのフローズンジャーニー", kana: "あなとえるさのふろーずんじゃーにー", pattern: "C", isDpa: true },
+      { id: "TDS-A30", park: "東京ディズニーシー", area: "ファンタジースプリングス", category: "アトラクション", name: "ラプンツェルのランタンフェスティバル", kana: "らぷんつぇるのらんたんふぇすてぃばる", pattern: "C", isDpa: true },
+      { id: "TDS-A31", park: "東京ディズニーシー", area: "ファンタジースプリングス", category: "アトラクション", name: "ピーターパンのネバーランドアドベンチャー", kana: "ぴーたーぱんのねばーらんどあどべんちゃー", pattern: "B", isDpa: true },
+      { id: "TDS-A32", park: "東京ディズニーシー", area: "ファンタジースプリングス", category: "アトラクション", name: "フェアリー・ティンカーベルのビジーバギー", kana: "ふぇありーてぃんかーべるのびじーばぎー", pattern: "C" },
+
+      // 東京ディズニーランド エンターテイメント
+      { id: "TDL-E01", park: "東京ディズニーランド", area: "パレードルート", category: "エンターテイメント", name: "ザ・ヴィランズ・ハロウィーン“Into the Frenzy”", kana: "ざヴぃらんずはろうぃーん", isDpa: true },
+      { id: "TDL-E02", park: "東京ディズニーランド", area: "パレードルート", category: "エンターテイメント", name: "ディズニー・ハーモニー・イン・カラー", kana: "でぃずにーはーもにーいんからー", isDpa: true },
+      { id: "TDL-E03", park: "東京ディズニーランド", area: "パレードルート", category: "エンターテイメント", name: "東京ディズニーランド・エレクトリカルパレード・ドリームライツ", kana: "えれくとりかるぱれーどどりーむらいつ", isDpa: true },
+      { id: "TDL-E07", park: "東京ディズニーランド", area: "ファンタジーランド・フォレストシアター", category: "エンターテイメント", name: "ミッキーのマジカルミュージックワールド", kana: "みっきーのまじかるみゅーじっくわーるど", isDpa: true },
+
+      // 東京ディズニーシー エンターテイメント
+      { id: "TDS-E05", park: "東京ディズニーシー", area: "メディテレーニアンハーバー", category: "エンターテイメント", name: "ビリーヴ！～シー・オブ・ドリームス～", kana: "びりーぶしーおぶどりーむす", isDpa: true },
+      { id: "TDS-E07", park: "東京ディズニーシー", area: "ドックサイドステージ", category: "エンターテイメント", name: "ダンス・ザ・グローブ！", kana: "だんすざぐろーぶ", isDpa: true },
+      { id: "TDS-E08", park: "東京ディズニーシー", area: "ハンガーステージ", category: "エンターテイメント", name: "ドリームス・テイク・フライト", kana: "どりーむずていくふらいと", isDpa: true }
+    ];
+
+    let selectedFacility = null;
+    let activePassTab = 'dpa_attraction';
+    let logs = JSON.parse(localStorage.getItem('tdr_logs_2026') || '[]');
+    let passState = JSON.parse(localStorage.getItem('tdr_pass_state_2026') || '{}');
+
+    window.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      setupFacilitySearch();
+      updatePassPanel();
+      renderTimeline();
+      updateStats();
+      setInterval(updateTimerCountdown, 1000);
+      setDefaultTimes();
+    });
+
+    function setDefaultTimes() {
+      const now = new Date();
+      const timeStr = now.toTimeString().substring(0, 5);
+
+      const passAcquiredInput = document.getElementById('pass-acquired-at');
+      const passStartInput = document.getElementById('pass-start-time');
+      if (passAcquiredInput) passAcquiredInput.value = timeStr;
+      if (passStartInput) passStartInput.value = timeStr;
+    }
+
+    function switchPassTab(tab) {
+      activePassTab = tab;
+      ['dpa_attraction', 'dpa_entertainment', 'standby'].forEach(t => {
+        const el = document.getElementById(`tab-${t}`);
+        if (t === tab) {
+          el.className = "flex-1 min-w-[100px] py-2 text-center rounded-lg transition bg-white text-indigo-700 shadow-sm font-bold";
+        } else {
+          el.className = "flex-1 min-w-[100px] py-2 text-center rounded-lg transition text-slate-600";
+        }
+      });
+      updatePassPanel();
+    }
+
+    function updatePassPanel() {
+      const selectEl = document.getElementById('pass-facility');
+      selectEl.innerHTML = '';
+
+      let filterFn = () => false;
+      if (activePassTab === 'dpa_attraction') {
+        filterFn = f => f.category === 'アトラクション' && f.isDpa;
+      } else if (activePassTab === 'dpa_entertainment') {
+        filterFn = f => f.category === 'エンターテイメント' && f.isDpa;
+      } else if (activePassTab === 'standby') {
+        filterFn = f => f.category === 'アトラクション';
+      }
+
+      const filtered = FACILITIES_MASTER.filter(filterFn);
+      filtered.forEach(f => {
+        const opt = document.createElement('option');
+        opt.value = f.displayName || f.name;
+        opt.textContent = `[${f.park === '東京ディズニーランド' ? 'TDL' : 'TDS'}] ${f.displayName || f.name}`;
+        selectEl.appendChild(opt);
+      });
+
+      updateTimerCountdown();
+    }
+
+    function updateTimerCountdown() {
+      const currentPassInfo = passState[activePassTab];
+      const countdownEl = document.getElementById('timer-countdown');
+      const lastAcquiredEl = document.getElementById('last-acquired-time');
+      const nextAvailableEl = document.getElementById('next-available-time');
+
+      if (!currentPassInfo) {
+        countdownEl.textContent = '取得可能';
+        countdownEl.className = 'text-2xl font-bold text-emerald-600 tracking-tight';
+        lastAcquiredEl.textContent = 'なし';
+        nextAvailableEl.textContent = '--:--';
+        return;
+      }
+
+      lastAcquiredEl.textContent = currentPassInfo.acquiredAt;
+      nextAvailableEl.textContent = currentPassInfo.nextAvailableAt;
+
+      const now = new Date();
+      const [nextH, nextM] = currentPassInfo.nextAvailableAt.split(':').map(Number);
+      const targetTime = new Date();
+      targetTime.setHours(nextH, nextM, 0, 0);
+
+      const diffMs = targetTime - now;
+
+      if (diffMs <= 0) {
+        countdownEl.textContent = '取得可能';
+        countdownEl.className = 'text-2xl font-bold text-emerald-600 tracking-tight';
+      } else {
+        const diffMin = Math.ceil(diffMs / (1000 * 60));
+        const hours = Math.floor(diffMin / 60);
+        const mins = diffMin % 60;
+        countdownEl.textContent = hours > 0 ? `あと ${hours}時間${mins}分` : `あと ${mins}分`;
+        countdownEl.className = 'text-2xl font-bold text-indigo-600 tracking-tight';
+      }
+    }
+
+    function handlePassSubmit(e) {
+      e.preventDefault();
+      const facilityName = document.getElementById('pass-facility').value;
+      const acquiredAt = document.getElementById('pass-acquired-at').value;
+      const startTime = document.getElementById('pass-start-time').value;
+
+      let nextAvailableAt = '';
+      const [acqH, acqM] = acquiredAt.split(':').map(Number);
+      const [startH, startM] = startTime.split(':').map(Number);
+
+      const acqDate = new Date(); acqDate.setHours(acqH, acqM, 0, 0);
+      const startDate = new Date(); startDate.setHours(startH, startM, 0, 0);
+
+      if (activePassTab.startsWith('dpa')) {
+        const hourLater = new Date(acqDate.getTime() + 60 * 60 * 1000);
+        const target = hourLater < startDate ? hourLater : startDate;
+        nextAvailableAt = target.toTimeString().substring(0, 5);
+      } else {
+        const diffMinutes = (startDate - acqDate) / (1000 * 60);
+        const addMinutes = diffMinutes <= 60 ? 60 : 120;
+        const target = new Date(acqDate.getTime() + addMinutes * 60 * 1000);
+        nextAvailableAt = target.toTimeString().substring(0, 5);
+      }
+
+      passState[activePassTab] = {
+        facilityName,
+        acquiredAt,
+        startTime,
+        nextAvailableAt
+      };
+      localStorage.setItem('tdr_pass_state_2026', JSON.stringify(passState));
+
+      const passTypeLabel = activePassTab === 'dpa_attraction' ? 'DPA(アトラクション)' :
+                            activePassTab === 'dpa_entertainment' ? 'DPA(エンタメ)' : 'スタンバイパス/PP';
+
+      const logItem = {
+        id: Date.now().toString(),
+        type: 'PASS_ACQUIRED',
+        passType: passTypeLabel,
+        facilityName,
+        acquiredAt,
+        startTime,
+        nextAvailableAt,
+        timestamp: acquiredAt
+      };
+
+      logs.push(logItem);
+      logs.sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+      localStorage.setItem('tdr_logs_2026', JSON.stringify(logs));
+
+      updatePassPanel();
+      renderTimeline();
+    }
+
+    function setupFacilitySearch() {
+      const input = document.getElementById('facility-search');
+      const list = document.getElementById('suggest-list');
+
+      input.addEventListener('input', () => {
+        const query = input.value.trim().toLowerCase();
+        if (!query) {
+          list.classList.add('hidden');
+          return;
+        }
+
+        const matches = FACILITIES_MASTER.filter(f => {
+          const name = (f.displayName || f.name).toLowerCase();
+          const kana = f.kana || '';
+          return name.includes(query) || kana.includes(query);
+        });
+
+        if (matches.length === 0) {
+          list.classList.add('hidden');
+          return;
+        }
+
+        list.innerHTML = '';
+        matches.forEach(f => {
+          const item = document.createElement('div');
+          item.className = 'p-3 border-b border-slate-100 hover:bg-indigo-50 cursor-pointer flex justify-between items-center text-xs';
+          item.innerHTML = `
+            <div>
+              <div class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+                ${f.displayName || f.name}
+                ${f.isSingleRider ? '<span class="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-medium">SR可</span>' : ''}
+              </div>
+              <div class="text-slate-400 mt-0.5">${f.park} / ${f.area}</div>
+            </div>
+            <span class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded">${f.category}</span>
+          `;
+          item.onclick = () => selectFacility(f);
+          list.appendChild(item);
+        });
+
+        list.classList.remove('hidden');
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!input.contains(e.target) && !list.contains(e.target)) {
+          list.classList.add('hidden');
+        }
+      });
+    }
+
+    function selectFacility(facility) {
+      selectedFacility = facility;
+      document.getElementById('facility-search').value = facility.displayName || facility.name;
+      document.getElementById('suggest-list').classList.add('hidden');
+
+      document.getElementById('selected-park').textContent = facility.park;
+      document.getElementById('selected-area').textContent = facility.area;
+      document.getElementById('selected-name').textContent = facility.displayName || facility.name;
+      document.getElementById('selected-type').textContent = facility.category;
+
+      const srBadge = document.getElementById('sr-badge');
+      const srOption = document.getElementById('single-rider-option');
+      if (facility.isSingleRider) {
+        srBadge.classList.remove('hidden');
+        srOption.classList.remove('hidden');
+      } else {
+        srBadge.classList.add('hidden');
+        srOption.classList.add('hidden');
+      }
+
+      document.getElementById('selected-facility-card').classList.remove('hidden');
+
+      const container = document.getElementById('time-inputs-container');
+      container.innerHTML = '';
+
+      const nowStr = new Date().toTimeString().substring(0, 5);
+
+      if (facility.category === 'エンターテイメント') {
+        container.innerHTML = `
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">鑑賞・体験時間</label>
+            <input type="time" id="input-exp-time" value="${nowStr}" class="w-full text-sm p-2 rounded-lg border border-slate-300" required>
+          </div>
+        `;
+      } else if (facility.pattern === 'A') {
+        container.innerHTML = `
+          <div class="grid grid-cols-3 gap-2">
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">並び始め</label>
+              <input type="time" id="input-queue-time" value="${nowStr}" class="w-full text-xs p-2 rounded-lg border border-slate-300" required>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">プレショー入場</label>
+              <input type="time" id="input-preshow-entry" value="${nowStr}" class="w-full text-xs p-2 rounded-lg border border-slate-300" required>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">プレショー開始</label>
+              <input type="time" id="input-preshow-start" value="${nowStr}" class="w-full text-xs p-2 rounded-lg border border-slate-300" required>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">通常表記待ち時間（分）</label>
+            <input type="number" id="input-display-wait" min="0" placeholder="例: 30" class="w-full text-sm p-2 rounded-lg border border-slate-300" required>
+          </div>
+        `;
+      } else if (facility.pattern === 'B') {
+        container.innerHTML = `
+          <div class="grid grid-cols-3 gap-2">
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">並び始め</label>
+              <input type="time" id="input-queue-time" value="${nowStr}" class="w-full text-xs p-2 rounded-lg border border-slate-300" required>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">プレショー入場</label>
+              <input type="time" id="input-preshow-entry" value="${nowStr}" class="w-full text-xs p-2 rounded-lg border border-slate-300" required>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">乗車時間</label>
+              <input type="time" id="input-ride-time" value="${nowStr}" class="w-full text-xs p-2 rounded-lg border border-slate-300" required>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">通常表記待ち時間（分）</label>
+            <input type="number" id="input-display-wait" min="0" placeholder="例: 50" class="w-full text-sm p-2 rounded-lg border border-slate-300" required>
+          </div>
+        `;
+      } else {
+        container.innerHTML = `
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">並び始め</label>
+              <input type="time" id="input-queue-time" value="${nowStr}" class="w-full text-sm p-2 rounded-lg border border-slate-300" required>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">体験・乗車開始</label>
+              <input type="time" id="input-exp-time" value="${nowStr}" class="w-full text-sm p-2 rounded-lg border border-slate-300" required>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">通常表記待ち時間（分）</label>
+            <input type="number" id="input-display-wait" min="0" placeholder="例: 20" class="w-full text-sm p-2 rounded-lg border border-slate-300" required>
+          </div>
+        `;
+      }
+
+      const btn = document.getElementById('log-submit-btn');
+      btn.disabled = false;
+      btn.className = "w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold shadow-sm transition flex items-center justify-center gap-2";
+    }
+
+    function handleLogSubmit(e) {
+      e.preventDefault();
+      if (!selectedFacility) return;
+
+      const isSingleRider = selectedFacility.isSingleRider && document.getElementById('input-is-single-rider').checked;
+
+      const logItem = {
+        id: Date.now().toString(),
+        type: 'FACILITY_LOG',
+        facilityId: selectedFacility.id,
+        facilityName: selectedFacility.displayName || selectedFacility.name,
+        park: selectedFacility.park,
+        area: selectedFacility.area,
+        category: selectedFacility.category,
+        pattern: selectedFacility.pattern,
+        isSingleRider: isSingleRider
+      };
+
+      if (selectedFacility.category === 'エンターテイメント') {
+        logItem.expTime = document.getElementById('input-exp-time').value;
+        logItem.timestamp = logItem.expTime;
+      } else {
+        const queueTime = document.getElementById('input-queue-time').value;
+        const displayWait = parseInt(document.getElementById('input-display-wait').value, 10) || 0;
+        logItem.queueTime = queueTime;
+        logItem.displayWait = displayWait;
+        logItem.timestamp = queueTime;
+
+        let actualEndTime = '';
+        if (selectedFacility.pattern === 'A' || selectedFacility.pattern === 'B') {
+          actualEndTime = document.getElementById('input-preshow-entry').value;
+          logItem.preshowEntry = actualEndTime;
+          if (selectedFacility.pattern === 'A') {
+            logItem.preshowStart = document.getElementById('input-preshow-start').value;
+          } else {
+            logItem.rideTime = document.getElementById('input-ride-time').value;
+          }
+        } else {
+          actualEndTime = document.getElementById('input-exp-time').value;
+          logItem.expTime = actualEndTime;
+        }
+
+        const [qH, qM] = queueTime.split(':').map(Number);
+        const [eH, eM] = actualEndTime.split(':').map(Number);
+        const qDate = new Date(); qDate.setHours(qH, qM, 0, 0);
+        const eDate = new Date(); eDate.setHours(eH, eM, 0, 0);
+
+        let actualWaitMin = Math.round((eDate - qDate) / (1000 * 60));
+        if (actualWaitMin < 0) actualWaitMin += 24 * 60;
+
+        logItem.actualWait = actualWaitMin;
+        logItem.savedWait = displayWait - actualWaitMin;
+      }
+
+      logs.push(logItem);
+      logs.sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+      localStorage.setItem('tdr_logs_2026', JSON.stringify(logs));
+
+      document.getElementById('log-form').reset();
+      document.getElementById('selected-facility-card').classList.add('hidden');
+      document.getElementById('single-rider-option').classList.add('hidden');
+      document.getElementById('time-inputs-container').innerHTML = `
+        <div class="text-xs text-slate-400 text-center py-2 border border-dashed rounded-lg">
+          施設を選択すると入力項目が表示されます
+        </div>
+      `;
+      const btn = document.getElementById('log-submit-btn');
+      btn.disabled = true;
+      btn.className = "w-full py-3 bg-slate-300 text-white rounded-xl text-sm font-bold shadow-sm transition flex items-center justify-center gap-2";
+      selectedFacility = null;
+
+      renderTimeline();
+      updateStats();
+    }
+
+    function renderTimeline() {
+      const container = document.getElementById('timeline-list');
+      container.innerHTML = '';
+
+      if (logs.length === 0) {
+        container.innerHTML = '<div class="text-center py-8 text-xs text-slate-400">まだ記録がありません</div>';
+        return;
+      }
+
+      logs.forEach(item => {
+        const card = document.createElement('div');
+        card.className = "relative pl-8 group";
+
+        const deleteBtnHtml = `
+          <button onclick="deleteLog('${item.id}')" class="text-slate-300 hover:text-rose-500 transition p-1" title="ログを削除">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        `;
+
+        if (item.type === 'PASS_ACQUIRED') {
+          card.innerHTML = `
+            <div class="absolute left-2 top-1.5 w-3 h-3 bg-indigo-600 rounded-full border-2 border-white"></div>
+            <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-3 text-xs">
+              <div class="flex justify-between items-center mb-1">
+                <span class="font-bold text-indigo-700">${item.passType} 取得</span>
+                <div class="flex items-center gap-1">
+                  <span class="text-slate-400 font-mono">${item.acquiredAt}</span>
+                  ${deleteBtnHtml}
+                </div>
+              </div>
+              <div class="font-bold text-slate-800 text-sm mb-1">${item.facilityName}</div>
+              <div class="text-slate-600">利用開始時間: <span class="font-bold text-slate-800">${item.startTime}</span></div>
+            </div>
+          `;
+        } else {
+          let detailsHtml = '';
+          if (item.category === 'エンターテイメント') {
+            detailsHtml = `<div class="text-slate-600">鑑賞時間: ${item.expTime}</div>`;
+          } else {
+            const savedText = item.savedWait >= 0 
+              ? `<span class="text-emerald-600 font-bold">+${item.savedWait}分短縮</span>` 
+              : `<span class="text-rose-600 font-bold">${item.savedWait}分オーバー</span>`;
+
+            detailsHtml = `
+              <div class="grid grid-cols-2 gap-1 text-slate-600 mt-1">
+                <div>表記: ${item.displayWait}分</div>
+                <div>実測: ${item.actualWait}分 (${savedText})</div>
+              </div>
+              <div class="text-[11px] text-slate-400 mt-1">並び始め: ${item.queueTime}</div>
+            `;
+          }
+
+          const srTag = item.isSingleRider ? `<span class="ml-1.5 text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded border border-amber-200 font-semibold">Single Rider</span>` : '';
+
+          card.innerHTML = `
+            <div class="absolute left-2 top-1.5 w-3 h-3 bg-slate-400 rounded-full border-2 border-white"></div>
+            <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs">
+              <div class="flex justify-between items-center mb-1">
+                <span class="px-1.5 py-0.5 bg-slate-200 text-slate-700 rounded text-[10px]">${item.park === '東京ディズニーランド' ? 'TDL' : 'TDS'}</span>
+                <div class="flex items-center gap-1">
+                  <span class="text-slate-400 font-mono">${item.timestamp}</span>
+                  ${deleteBtnHtml}
+                </div>
+              </div>
+              <div class="font-bold text-slate-800 text-sm flex items-center">${item.facilityName}${srTag}</div>
+              ${detailsHtml}
+            </div>
+          `;
+        }
+
+        container.appendChild(card);
+      });
+
+      lucide.createIcons();
+    }
+
+    function deleteLog(id) {
+      logs = logs.filter(l => l.id !== id);
+      localStorage.setItem('tdr_logs_2026', JSON.stringify(logs));
+      renderTimeline();
+      updateStats();
+    }
+
+    function updateStats() {
+      const facilityLogs = logs.filter(l => l.type === 'FACILITY_LOG');
+      document.getElementById('stat-count').innerHTML = `${facilityLogs.length} <span class="text-xs font-normal text-slate-500">件</span>`;
+
+      let totalWait = 0;
+      let totalSaved = 0;
+
+      facilityLogs.forEach(l => {
+        if (l.actualWait) totalWait += l.actualWait;
+        if (l.savedWait) totalSaved += l.savedWait;
+      });
+
+      document.getElementById('stat-wait').innerHTML = `${totalWait} <span class="text-xs font-normal text-slate-500">分</span>`;
+
+      const savedEl = document.getElementById('stat-saved');
+      savedEl.innerHTML = `${totalSaved} <span class="text-xs font-normal text-slate-500">分</span>`;
+      savedEl.className = totalSaved >= 0 
+        ? "text-xl font-bold text-emerald-600 mt-1" 
+        : "text-xl font-bold text-rose-600 mt-1";
+    }
+
+    function clearAllLogs() {
+      if (confirm('すべてのタイムラインとパスタイマーをリセットしますか？')) {
+        logs = [];
+        passState = {};
+        localStorage.removeItem('tdr_logs_2026');
+        localStorage.removeItem('tdr_pass_state_2026');
+        renderTimeline();
+        updateStats();
+        updatePassPanel();
+      }
+    }
+
+    // バックアップ機能（JSONエクスポート）
+    function exportData() {
+      const data = {
+        logs,
+        passState,
+        exportedAt: new Date().toISOString()
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `tdr_log_backup_${new Date().toISOString().substring(0,10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // 復元機能（JSONインポート）
+    function importData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (imported.logs && Array.isArray(imported.logs)) {
+            logs = imported.logs;
+            passState = imported.passState || {};
+            localStorage.setItem('tdr_logs_2026', JSON.stringify(logs));
+            localStorage.setItem('tdr_pass_state_2026', JSON.stringify(passState));
+            renderTimeline();
+            updateStats();
+            updatePassPanel();
+            alert('データを正常に復元しました');
+          } else {
+            alert('無効なバックアップファイルフォーマットです');
+          }
+        } catch (err) {
+          alert('ファイルの読み込みに失敗しました');
+        }
+      };
+      reader.readAsText(file);
+    }
+  </script>
 </body>
 </html>
