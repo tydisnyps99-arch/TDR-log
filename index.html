@@ -4,266 +4,105 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>東京ディズニーリゾート 体験ログ</title>
-  <link rel="stylesheet" href="css/style.css">
+  <!-- 相対パス ./ で指定することでGitHub Pagesのサブディレクトリでも正しく読み込まれます -->
+  <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-
-<div class="container">
-
-  <!-- ================= 1. スタート画面 ================= -->
-  <div id="screen-start" class="screen active">
-    <div class="header">
+  <div class="container">
+    <header class="header">
       <h1>✨ 東京ディズニーリゾート<br>体験ログ</h1>
-    </div>
-    <div class="card">
-      <div class="input-group">
-        <label>日付</label>
-        <input type="date" id="start-date">
+    </header>
+
+    <!-- 基本設定セクション -->
+    <section class="card">
+      <div class="form-group">
+        <label for="visit-date">日付</label>
+        <input type="date" id="visit-date">
       </div>
-      <div class="input-group">
-        <label>現地到着時間</label>
-        <input type="time" id="start-arrival-time">
+      <div class="form-group">
+        <label for="arrival-time">現地到着時間</label>
+        <input type="time" id="arrival-time">
       </div>
-      <div class="input-group">
+      <div class="form-group">
         <label>パーク</label>
         <div class="radio-group">
-          <label><input type="radio" name="start-park" value="東京ディズニーランド" checked> 東京ディズニーランド</label>
-          <label><input type="radio" name="start-park" value="東京ディズニーシー"> 東京ディズニーシー</label>
+          <label><input type="radio" name="park" value="tdl" checked> 東京ディズニーランド</label>
+          <label><input type="radio" name="park" value="tds"> 東京ディズニーシー</label>
         </div>
       </div>
-      <button class="btn primary" onclick="startDayLog()">今日のログを開始</button>
-    </div>
-
-    <div class="card">
-      <button class="btn secondary" onclick="navigateTo('screen-history')">過去のログを見る</button>
-      <button class="btn secondary" style="margin-top: 10px;" onclick="navigateTo('screen-admin')">管理者設定</button>
-    </div>
-  </div>
-
-  <!-- ================= 2. 立ち上げ時間画面 ================= -->
-  <div id="screen-setup" class="screen">
-    <div class="header">
-      <h1>立ち上げ時間の記録</h1>
-    </div>
-    <div class="card">
-      <p class="desc-text">「立って待つ状態」になった時間を記録します。</p>
-      <div class="input-group">
-        <label>立ち上げ時間</label>
-        <input type="time" id="setup-time">
+      <button id="btn-start" class="btn btn-primary">今日のログを開始</button>
+      <div class="btn-sub-group">
+        <button type="button" class="btn btn-secondary">過去のログを見る</button>
+        <button type="button" class="btn btn-secondary">管理者設定</button>
       </div>
-      <button class="btn primary" onclick="confirmSetupTime()">記録して開始</button>
-      <button class="btn secondary" style="margin-top: 10px;" onclick="setSetupTimeNow()">すでに立って待っています</button>
-    </div>
-  </div>
+    </section>
 
-  <!-- ================= 3. メイン体験ログ画面 ================= -->
-  <div id="screen-main" class="screen">
-    <div class="header">
-      <h1 id="main-header-title">体験ログ</h1>
-      <span class="badge" id="main-header-info"></span>
-    </div>
+    <!-- 立ち上げ時間の記録 -->
+    <section class="card">
+      <h2>立ち上げ時間の記録</h2>
+      <p class="description">「立って待つ状態」になった時間を記録します。</p>
+      <div class="form-group">
+        <label for="standup-time">立ち上げ時間</label>
+        <input type="time" id="standup-time">
+      </div>
+      <div class="btn-inline-group">
+        <button type="button" class="btn btn-action">記録して開始</button>
+        <button type="button" class="btn btn-outline">すでに立って待っています</button>
+      </div>
+    </section>
 
-    <!-- DPA / スタンバイパス記録 -->
-    <div class="card">
-      <div class="card-title">🎫 DPA / パス取得記録</div>
-      <div class="form-grid">
-        <div class="input-group">
-          <label>取得時間</label>
-          <input type="time" id="pass-get-time">
+    <!-- 体験ログ -->
+    <section class="card">
+      <h2>体験ログ</h2>
+
+      <!-- DPA / パス取得記録 -->
+      <div class="sub-section">
+        <h3>🎫 DPA / パス取得記録</h3>
+        <div class="form-group">
+          <label for="pass-acquire-time">取得時間</label>
+          <input type="time" id="pass-acquire-time">
         </div>
-        <div class="input-group">
-          <label>利用開始時間 (5分刻み)</label>
-          <!-- 利用開始時間のみ 5分刻み -->
+        <div class="form-group">
+          <label for="pass-start-time">利用開始時間（5分刻み）</label>
           <input type="time" id="pass-start-time" step="300">
         </div>
-      </div>
-      <div class="input-group" style="margin-bottom: 12px;">
-        <label>対象施設 / ショー</label>
-        <select id="pass-facility-select"></select>
-      </div>
-      <button class="btn primary" onclick="recordPassLog()">⊕ パス取得をログに記録</button>
-    </div>
-
-    <!-- 体験ログ記録 -->
-    <div class="card">
-      <div class="card-title">🔮 体験ログを記録</div>
-      <div class="input-group">
-        <label>施設・エンターテイメント名（数文字で検索）</label>
-        <input type="text" id="facility-search" placeholder="例: ソアリン" list="facility-datalist" oninput="onFacilitySelect()">
-        <datalist id="facility-datalist"></datalist>
-      </div>
-
-      <div class="facility-info-box" id="facility-info-preview" style="display:none;">
-        <span id="prev-park" class="highlight"></span> / <span id="prev-area"></span><br>
-        <strong id="prev-name"></strong>
-      </div>
-
-      <div class="form-grid" style="margin-top: 12px;">
-        <div class="input-group">
-          <label>並び始め時間</label>
-          <input type="time" id="log-start-time">
-        </div>
-        <div class="input-group">
-          <label>プレショー部屋入場</label>
-          <input type="time" id="log-preshow-time">
-        </div>
-        <div class="input-group">
-          <label>乗車時間</label>
-          <input type="time" id="log-ride-time">
-        </div>
-      </div>
-      <div class="input-group" style="margin-bottom: 12px;">
-        <label>表記待ち時間（分）</label>
-        <input type="number" id="log-wait-time" placeholder="55">
-      </div>
-      <button class="btn primary" onclick="recordExperienceLog()">✓ 体験ログを保存</button>
-    </div>
-
-    <!-- 自由記述タイムライン -->
-    <div class="card">
-      <div class="card-title">📝 自由記述メモ・出来事</div>
-      <div class="input-group">
-        <label>記録タイプ</label>
-        <div class="radio-group">
-          <label><input type="radio" name="memo-type" value="time" checked onclick="toggleMemoTimeInput(true)"> 時刻あり</label>
-          <label><input type="radio" name="memo-type" value="notime" onclick="toggleMemoTimeInput(false)"> 時刻なし</label>
-        </div>
-      </div>
-      <div class="input-group" id="memo-time-group">
-        <label>時刻</label>
-        <input type="time" id="memo-time">
-      </div>
-      <div class="input-group" style="margin-bottom: 12px;">
-        <label>メモ内容</label>
-        <textarea id="memo-text" rows="3" placeholder="例: 美女と野獣に乗ろうとしたが、システム調整のため並べなかった。"></textarea>
-      </div>
-      <button class="btn primary" onclick="recordMemoLog()">⊕ メモをタイムラインに追加</button>
-    </div>
-
-    <!-- 本日のタイムライン一覧 -->
-    <div class="card">
-      <div class="card-title">🕒 本日のタイムライン</div>
-      <div id="current-timeline" class="timeline-container"></div>
-    </div>
-
-    <!-- 一日のログ完了ボタン -->
-    <div class="card">
-      <button class="btn success" onclick="saveDayLogFinal()">💾 一日のログを保存して終了</button>
-    </div>
-  </div>
-
-  <!-- ================= 4. 過去のログ一覧画面 ================= -->
-  <div id="screen-history" class="screen">
-    <div class="header">
-      <h1>過去のログ</h1>
-    </div>
-    <div class="card" id="history-list-container">
-      <!-- 過去ログ一覧が動的挿入されます -->
-    </div>
-    <div class="card">
-      <button class="btn secondary" onclick="navigateTo('screen-start')">スタート画面へ戻る</button>
-    </div>
-  </div>
-
-  <!-- ================= 5. 過去ログ詳細画面 ================= -->
-  <div id="screen-detail" class="screen">
-    <div class="header">
-      <h1 id="detail-header-date">ログ詳細</h1>
-      <span class="badge" id="detail-header-park"></span>
-    </div>
-    <div class="card">
-      <div class="info-row"><strong>現地到着：</strong> <span id="detail-arrival"></span></div>
-      <div class="info-row"><strong>立ち上げ：</strong> <span id="detail-setup"></span></div>
-    </div>
-    <div class="card">
-      <div class="card-title">📜 タイムライン詳細</div>
-      <div id="detail-timeline-container" class="timeline-container"></div>
-    </div>
-    <div class="card">
-      <button class="btn secondary" onclick="navigateTo('screen-history')">過去ログ一覧へ戻る</button>
-    </div>
-  </div>
-
-  <!-- ================= 6. 管理者設定画面 ================= -->
-  <div id="screen-admin" class="screen">
-    <div class="header">
-      <h1>⚙️ 管理者設定（マスターデータ）</h1>
-    </div>
-
-    <div class="card">
-      <div class="card-title">施設・店舗マスター一覧</div>
-      <button class="btn primary" onclick="openFacilityForm()" style="margin-bottom:15px;">＋ 新規施設を追加</button>
-      <div id="admin-facility-list" class="admin-list"></div>
-    </div>
-
-    <!-- 施設編集/追加モーダルフォーム -->
-    <div id="admin-modal" class="modal">
-      <div class="modal-content">
-        <h3 id="modal-title">施設情報の編集</h3>
-        <input type="hidden" id="edit-facility-id">
-        
-        <div class="input-group">
-          <label>施設・店舗名</label>
-          <input type="text" id="edit-name">
-        </div>
-        <div class="input-group">
-          <label>パーク</label>
-          <select id="edit-park">
-            <option value="東京ディズニーランド">東京ディズニーランド</option>
-            <option value="東京ディズニーシー">東京ディズニーシー</option>
+        <div class="form-group">
+          <label for="pass-facility">対象施設 / ショー</label>
+          <select id="pass-facility">
+            <option value="">選択してください</option>
+            <option value="soarin">ソアリン：ファンタスティック・フライト</option>
+            <option value="center">センター・オブ・ジ・アース</option>
+            <option value="beauty">美女と野獣“魔法のものがたり”</option>
           </select>
         </div>
-        <div class="input-group">
-          <label>エリア</label>
-          <input type="text" id="edit-area">
-        </div>
-        <div class="input-group">
-          <label>カテゴリー</label>
-          <select id="edit-category">
-            <option value="アトラクション">アトラクション</option>
-            <option value="エンターテイメント">エンターテイメント</option>
-            <option value="ショップ">ショップ</option>
-            <option value="レストラン">レストラン</option>
-          </select>
-        </div>
-        <div class="input-group">
-          <label>写真URL</label>
-          <input type="text" id="edit-image">
-        </div>
-        <div class="input-group">
-          <label>公式サイト・詳細URL</label>
-          <input type="text" id="edit-url">
-        </div>
-        
-        <div class="checkbox-group" style="margin: 10px 0;">
-          <label><input type="checkbox" id="edit-dpa"> DPA対象</label>
-          <label><input type="checkbox" id="edit-sp"> スタンバイパス対象</label>
-          <label><input type="checkbox" id="edit-mo"> モバイルオーダー対象</label>
-        </div>
+        <button type="button" class="btn btn-action">＋ パス取得をログに記録</button>
+      </div>
 
-        <div class="input-group">
-          <label>メンテナンス期間（該当日は選択肢から除外）</label>
-          <div class="form-grid">
-            <input type="date" id="edit-maint-start">
-            <input type="date" id="edit-maint-end">
-          </div>
-        </div>
+      <hr class="divider">
 
-        <div style="display: flex; gap: 10px; margin-top: 15px;">
-          <button class="btn primary" onclick="saveFacilityMaster()">保存</button>
-          <button class="btn secondary" onclick="closeFacilityModal()">キャンセル</button>
+      <!-- 施設体験ログ -->
+      <div class="sub-section">
+        <h3>🎡 体験ログを記録</h3>
+        <div class="form-group">
+          <label for="facility-search">施設・エンターテイメント名（数文字で検索）</label>
+          <input type="text" id="facility-search" placeholder="例: ソアリン">
+        </div>
+        <div class="form-group">
+          <label for="queue-time">並び始め時間</label>
+          <input type="time" id="queue-time">
+        </div>
+        <div class="form-group">
+          <label for="preshow-time">プレショー部屋入場</label>
+          <input type="time" id="preshow-time">
+        </div>
+        <div class="form-group">
+          <label for="ride-time">乗車時間</label>
+          <input type="time" id="ride-time">
         </div>
       </div>
-    </div>
-
-    <div class="card">
-      <button class="btn secondary" onclick="navigateTo('screen-start')">スタート画面へ戻る</button>
-      <button class="btn danger" style="margin-top: 10px;" onclick="resetDefaultMaster()">マスターデータを初期状態に戻す</button>
-    </div>
+    </section>
   </div>
 
-</div>
-
-<script src="js/app.js"></script>
+  <script src="./app.js" defer></script>
 </body>
 </html>
