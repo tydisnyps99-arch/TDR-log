@@ -1,0 +1,262 @@
+// Webアプリからのデータ受け取り（保存処理）
+function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents);
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheetName = data.sheetName || 'logs'; // 指定がなければ logs シート
+    const sheet = ss.getSheetByName(sheetName);
+
+    if (!sheet) {
+      throw new Error('指定されたシートが存在しません: ' + sheetName);
+    }
+
+    // 1行目の見出し一覧を取得
+    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    
+    // 見出しに合わせてデータの並び順を自動調整
+    const row = headers.map(header => {
+      if (header === '日時' || header === 'timestamp') {
+        return new Date();
+      }
+      return data.payload[header] !== undefined ? data.payload[header] : '';
+    });
+
+    sheet.appendRow(row);
+
+    return ContentService.createTextOutput(JSON.stringify({ status: 'success' }))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: error.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// Webアプリへのデータ受け渡し（読み込み処理）
+function doGet(e) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheetName = e.parameter.sheetName || 'logs';
+    const sheet = ss.getSheetByName(sheetName);
+
+    if (!sheet) {
+      throw new Error('指定されたシートが存在しません: ' + sheetName);
+    }
+
+    const data = sheet.getDataRange().getValues();
+    if (data.length <= 1) {
+      return ContentService.createTextOutput(JSON.stringify({ status: 'success', data: [] }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const headers = data[0];
+    const rows = data.slice(1);
+
+    // オブジェクト配列に変換して返す
+    const result = rows.map(row => {
+      let obj = {};
+      headers.forEach((header, index) => {
+        obj[header] = row[index];
+      });
+      return obj;
+    });
+
+    return ContentService.createTextOutput(JSON.stringify({ status: 'success', data: result }))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: error.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// 東京ディズニーリゾート 施設マスター
+const facilityMaster = [
+  // --- TDL アトラクション ---
+  { id: "tdl-a-01", park: "TDL", area: "ワールドバザール", category: "アトラクション", name: "オムニバス", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "normal", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-a-02", park: "TDL", area: "ワールドバザール", category: "アトラクション", name: "ペニーアーケード", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "normal", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-a-03", park: "TDL", area: "アドベンチャーランド", category: "アトラクション", name: "ウエスタンリバー鉄道", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "normal", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-a-04", park: "TDL", area: "アドベンチャーランド", category: "アトラクション", name: "カリブの海賊", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "normal", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-a-05", park: "TDL", area: "アドベンチャーランド", category: "アトラクション", name: "ジャングルクルーズ：ワイルドライフ・エクスペディション", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "normal", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-a-06", park: "TDL", area: "アドベンチャーランド", category: "アトラクション", name: "スイスファミリー・ツリーハウス", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "normal", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-a-07", park: "TDL", area: "アドベンチャーランド", category: "アトラクション", name: "魅惑のチキルーム：スティッチ・プレゼンツ“アロハ・エ・コモ・マイ！”", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "normal", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-a-08", park: "TDL", area: "ウエスタンランド", category: "アトラクション", name: "ウエスタンランド・シューティングギャラリー", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "normal", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-a-09", park: "TDL", area: "ウエスタンランド", category: "アトラクション", name: "カントリーベア・シアター", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "normal", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-a-10", park: "TDL", area: "ウエスタンランド", category: "アトラクション", name: "蒸気船マークトウェイン号", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "normal", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-a-11", park: "TDL", area: "ウエスタンランド", category: "アトラクション", name: "トムソーヤ島いかだ", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "normal", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-a-12", park: "TDL", area: "ウエスタンランド", category: "アトラクション", name: "ビッグサンダー・マウンテン", dpaPrice: 1500, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "normal", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-a-13", park: "TDL", area: "クリッターカントリー", category: "アトラクション", name: "スプラッシュ・マウンテン", dpaPrice: 1500, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "normal", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-a-14", park: "TDL", area: "クリッターカントリー", category: "アトラクション", name: "ビーバーブラザーズのカヌー探険", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "normal", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-a-15", park: "TDL", area: "ファンタジーランド", category: "アトラクション", name: "アリスのティーパーティー", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "normal", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-a-16", park: "TDL", area: "ファンタジーランド", category: "アトラクション", name: "イッツ・ア・スモールワールド", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "normal", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-a-17", park: "TDL", area: "ファンタジーランド", category: "アトラクション", name: "キャッスルカルーセル", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "normal", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-a-18", park: "TDL", area: "ファンタジーランド", category: "アトラクション", name: "白雪姫と七人のこびと", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "normal", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-a-19", park: "TDL", area: "ファンタジーランド", category: "アトラクション", name: "シンデレラのフェアリーテイル・ホール", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "normal", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-a-20", park: "TDL", area: "ファンタジーランド", category: "アトラクション", name: "空飛ぶダンボ", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "normal", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-a-21", park: "TDL", area: "ファンタジーランド", category: "アトラクション", name: "美女と野獣“魔法のものがたり”", dpaPrice: 2500, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "preshow_to_ride", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-a-22", park: "TDL", area: "ファンタジーランド", category: "アトラクション", name: "ピーターパン空の旅", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "normal", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-a-23", park: "TDL", area: "ファンタジーランド", category: "アトラクション", name: "ピノキオの冒険旅行", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "normal", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-a-24", park: "TDL", area: "ファンタジーランド", category: "アトラクション", name: "プーさんのハニーハント", dpaPrice: 1500, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "normal", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-a-25", park: "TDL", area: "ファンタジーランド", category: "アトラクション", name: "ホーンテッドマンション", dpaPrice: 1000, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "preshow_to_ride", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-a-26", park: "TDL", area: "ファンタジーランド", category: "アトラクション", name: "ミッキーのフィルハーマジック", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "preshow_start", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-a-27", park: "TDL", area: "トゥーンタウン", category: "アトラクション", name: "ガジェットのゴーコースター", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "normal", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-a-28", park: "TDL", area: "トゥーンタウン", category: "アトラクション", name: "グーフィーのペイント＆プレイハウス", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "normal", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-a-29", park: "TDL", area: "トゥーンタウン", category: "アトラクション", name: "チップとデールのツリーハウス", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "normal", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-a-30", park: "TDL", area: "トゥーンタウン", category: "アトラクション", name: "トゥーンパーク", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "normal", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-a-31", park: "TDL", area: "トゥーンタウン", category: "アトラクション", name: "ドナルドのボート", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "normal", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-a-32", park: "TDL", area: "トゥーンタウン", category: "アトラクション", name: "ミニーの家", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "normal", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-a-33", park: "TDL", area: "トゥーンタウン", category: "アトラクション", name: "ロジャーラビットのカートゥーンスピン", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "normal", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-a-34", park: "TDL", area: "トゥモローランド", category: "アトラクション", name: "スター・ツアーズ：ザ・アドベンチャーズ・コンティニュー", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "normal", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-a-35", park: "TDL", area: "トゥモローランド", category: "アトラクション", name: "スティッチ・エンカウンター", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "preshow_start", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-a-36", park: "TDL", area: "トゥモローランド", category: "アトラクション", name: "ベイマックスのハッピーライド", dpaPrice: 1500, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "normal", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-a-37", park: "TDL", area: "トゥモローランド", category: "アトラクション", name: "モンスターズ・インク“ライド＆ゴーシーク！”", dpaPrice: 1000, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "normal", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+
+  // --- TDL エンターテイメント ---
+  { id: "tdl-e-01", park: "TDL", area: "パレードルート", category: "エンターテイメント", name: "ディズニー・ハーモニー・イン・カラー", dpaPrice: 2500, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-e-02", park: "TDL", area: "パレードルート", category: "エンターテイメント", name: "東京ディズニーランド・エレクトリカルパレード・ドリームライツ", dpaPrice: 2500, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-e-03", park: "TDL", area: "パレードルート", category: "エンターテイメント", name: "ザ・ヴィランズ・ハロウィーン“Into the Frenzy”", dpaPrice: 3500, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-e-04", park: "TDL", area: "ファンタジーランド", category: "エンターテイメント", name: "ミッキーのマジカルミュージックワールド", dpaPrice: 2500, standbyPass: false, mobileOrder: false, entryReception: true, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-e-05", park: "TDL", area: "アドベンチャーランド", category: "エンターテイメント", name: "ジャンボリミッキー！レッツ・ダンス！", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: true, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-e-06", park: "TDL", area: "パークワイド", category: "エンターテイメント", name: "ナイトハイ・ハロウィーン", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-e-07", park: "TDL", area: "トゥモローランド", category: "エンターテイメント", name: "The D-Groovationz4 Live: Happy! Funky! Groovy! Tour", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: true, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+
+  // --- TDL ショップ ---
+  { id: "tdl-s-01", park: "TDL", area: "ワールドバザール", category: "ショップ", name: "カメラセンター", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-02", park: "TDL", area: "ワールドバザール", category: "ショップ", name: "グランドエンポーリアム", dpaPrice: null, standbyPass: true, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-03", park: "TDL", area: "ワールドバザール", category: "ショップ", name: "シルエットスタジオ", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-04", park: "TDL", area: "ワールドバザール", category: "ショップ", name: "タウンセンターファッション", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-05", park: "TDL", area: "ワールドバザール", category: "ショップ", name: "ディズニー＆カンパニー", dpaPrice: null, standbyPass: true, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-06", park: "TDL", area: "ワールドバザール", category: "ショップ", name: "トイ・ステーション", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-07", park: "TDL", area: "ワールドバザール", category: "ショップ", name: "ハウス・オブ・グリーティング", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-08", park: "TDL", area: "ワールドバザール", category: "ショップ", name: "ハリントンズ・ジュエリー＆ウォッチ", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-09", park: "TDL", area: "ワールドバザール", category: "ショップ", name: "ビビディ・バビディ・ブティック", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-10", park: "TDL", area: "ワールドバザール", category: "ショップ", name: "ペイストリーパレス", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-11", park: "TDL", area: "ワールドバザール", category: "ショップ", name: "ホームストア", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-12", park: "TDL", area: "ワールドバザール", category: "ショップ", name: "マジックショップ", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-13", park: "TDL", area: "ワールドバザール", category: "ショップ", name: "ワールドバザール・コンフェクショナリー", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-14", park: "TDL", area: "アドベンチャーランド", category: "ショップ", name: "アドベンチャーランド・バザール", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-15", park: "TDL", area: "アドベンチャーランド", category: "ショップ", name: "クリスタルアーツ", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-16", park: "TDL", area: "アドベンチャーランド", category: "ショップ", name: "ゴールデンガリオン", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-17", park: "TDL", area: "アドベンチャーランド", category: "ショップ", name: "ジャングルカーニバル（丸太投げ）", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-18", park: "TDL", area: "アドベンチャーランド", category: "ショップ", name: "ジャングルカーニバル（ボール転がし）", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-19", park: "TDL", area: "アドベンチャーランド", category: "ショップ", name: "パイレーツ・トレジャー", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-20", park: "TDL", area: "アドベンチャーランド", category: "ショップ", name: "パーティグラ・ギフト", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-21", park: "TDL", area: "アドベンチャーランド", category: "ショップ", name: "ラ・プティート・パフュームリー", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-22", park: "TDL", area: "アドベンチャーランド", category: "ショップ", name: "ル・マルシェ・ブルー", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-23", park: "TDL", area: "ウエスタンランド", category: "ショップ", name: "ウエスタンウエア", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-24", park: "TDL", area: "ウエスタンランド", category: "ショップ", name: "ウエスタンランド写真館", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-25", park: "TDL", area: "ウエスタンランド", category: "ショップ", name: "カントリーベア・バンドワゴン", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-26", park: "TDL", area: "ウエスタンランド", category: "ショップ", name: "ゼネラルストア", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-27", park: "TDL", area: "ウエスタンランド", category: "ショップ", name: "トレーディングポスト", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-28", park: "TDL", area: "ウエスタンランド", category: "ショップ", name: "ハッピーキャンパーサプライ", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-29", park: "TDL", area: "ウエスタンランド", category: "ショップ", name: "フロンティア・ウッドクラフト", dpaPrice: null, standbyPass: true, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-30", park: "TDL", area: "クリッターカントリー", category: "ショップ", name: "スプラッシュダウン・フォト", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-31", park: "TDL", area: "ファンタジーランド", category: "ショップ", name: "ガラスの靴", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-32", park: "TDL", area: "ファンタジーランド", category: "ショップ", name: "キングダム・トレジャー", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-33", park: "TDL", area: "ファンタジーランド", category: "ショップ", name: "ストロンボリズ・ワゴン", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-34", park: "TDL", area: "ファンタジーランド", category: "ショップ", name: "ハーモニーフェア", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-35", park: "TDL", area: "ファンタジーランド", category: "ショップ", name: "ビレッジショップス", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-36", park: "TDL", area: "ファンタジーランド", category: "ショップ", name: "プーさんコーナー", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-37", park: "TDL", area: "ファンタジーランド", category: "ショップ", name: "ブレイブリトルテイラー・ショップ", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-38", park: "TDL", area: "ファンタジーランド", category: "ショップ", name: "プレジャーアイランド・キャンディーズ", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-39", park: "TDL", area: "トゥーンタウン", category: "ショップ", name: "ギャグファクトリー／ファイブ・アンド・ダイム", dpaPrice: null, standbyPass: true, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-40", park: "TDL", area: "トゥーンタウン", category: "ショップ", name: "トゥーンタウン・デリバリー・カンパニー", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-41", park: "TDL", area: "トゥモローランド", category: "ショップ", name: "コズミック・エンカウンター", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-s-42", park: "TDL", area: "トゥモローランド", category: "ショップ", name: "トレジャーコメット", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+
+  // --- TDL レストラン ---
+  { id: "tdl-r-01", park: "TDL", area: "ワールドバザール", category: "レストラン", name: "アイスクリームコーン", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-r-02", park: "TDL", area: "ワールドバザール", category: "レストラン", name: "イーストサイド・カフェ", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-r-03", park: "TDL", area: "ワールドバザール", category: "レストラン", name: "グレートアメリカン・ワッフルカンパニー", dpaPrice: null, standbyPass: false, mobileOrder: true, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-r-04", park: "TDL", area: "ワールドバザール", category: "レストラン", name: "スウィートハート・カフェ", dpaPrice: null, standbyPass: false, mobileOrder: true, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-r-05", park: "TDL", area: "ワールドバザール", category: "レストラン", name: "センターストリート・コーヒーハウス", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-r-06", park: "TDL", area: "ワールドバザール", category: "レストラン", name: "リフレッシュメントコーナー", dpaPrice: null, standbyPass: false, mobileOrder: true, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-r-07", park: "TDL", area: "ワールドバザール", category: "レストラン", name: "れすとらん北齋", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-r-08", park: "TDL", area: "アドベンチャーランド", category: "レストラン", name: "カフェ・オーリンズ", dpaPrice: null, standbyPass: false, mobileOrder: true, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-r-09", park: "TDL", area: "アドベンチャーランド", category: "レストラン", name: "クリスタルパレス・レストラン", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-r-10", park: "TDL", area: "アドベンチャーランド", category: "レストラン", name: "ザ・ガゼーボ", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-r-11", park: "TDL", area: "アドベンチャーランド", category: "レストラン", name: "スキッパーズ・ギャレー", dpaPrice: null, standbyPass: false, mobileOrder: true, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-r-12", park: "TDL", area: "アドベンチャーランド", category: "レストラン", name: "スクウィーザーズ・トロピカル・ジュースバー", dpaPrice: null, standbyPass: false, mobileOrder: true, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-r-13", park: "TDL", area: "アドベンチャーランド", category: "レストラン", name: "チャイナボイジャー", dpaPrice: null, standbyPass: false, mobileOrder: true, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-r-14", park: "TDL", area: "アドベンチャーランド", category: "レストラン", name: "パークサイドワゴン", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-r-15", park: "TDL", area: "アドベンチャーランド", category: "レストラン", name: "ブルーバイユー・レストラン", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-r-16", park: "TDL", area: "アドベンチャーランド", category: "レストラン", name: "フレッシュフルーツオアシス", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-r-17", park: "TDL", area: "アドベンチャーランド", category: "レストラン", name: "ロイヤルストリート・ベランダ", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-r-18", park: "TDL", area: "アドベンチャーランド", category: "レストラン", name: "ボイラールーム・バイツ", dpaPrice: null, standbyPass: false, mobileOrder: true, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-r-19", park: "TDL", area: "ウエスタンランド", category: "レストラン", name: "キャンプ・ウッドチャック・キッチン", dpaPrice: null, standbyPass: false, mobileOrder: true, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-r-20", park: "TDL", area: "ウエスタンランド", category: "レストラン", name: "ザ・ダイヤモンドホースシュー", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-r-21", park: "TDL", area: "ウエスタンランド", category: "レストラン", name: "ハングリーベア・レストラン", dpaPrice: null, standbyPass: false, mobileOrder: true, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-r-22", park: "TDL", area: "ウエスタンランド", category: "レストラン", name: "プラザパビリオン・レストラン", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-r-23", park: "TDL", area: "ウエスタンランド", category: "レストラン", name: "ペコスビル・カフェ", dpaPrice: null, standbyPass: false, mobileOrder: true, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-r-24", park: "TDL", area: "クリッターカントリー", category: "レストラン", name: "グランマ・サラのキッチン", dpaPrice: null, standbyPass: false, mobileOrder: true, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-r-25", park: "TDL", area: "クリッターカントリー", category: "レストラン", name: "ラケッティのラクーンサルーン", dpaPrice: null, standbyPass: false, mobileOrder: true, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-r-26", park: "TDL", area: "ファンタジーランド", category: "レストラン", name: "キャプテンフックス・ギャレー", dpaPrice: null, standbyPass: false, mobileOrder: true, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-r-27", park: "TDL", area: "ファンタジーランド", category: "レストラン", name: "クイーン・オブ・ハートのバンケットホール", dpaPrice: null, standbyPass: false, mobileOrder: true, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-r-28", park: "TDL", area: "ファンタジーランド", category: "レストラン", name: "トルバドールタバン", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-r-29", park: "TDL", area: "ファンタジーランド", category: "レストラン", name: "ビレッジペイストリー", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-r-30", park: "TDL", area: "ファンタジーランド", category: "レストラン", name: "マジカルマーケット", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-r-31", park: "TDL", area: "トゥーンタウン", category: "レストラン", name: "トゥーンポップ", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-r-32", park: "TDL", area: "トゥーンタウン", category: "レストラン", name: "ヒューイ・デューイ・ルーイのグッドタイム・カフェ", dpaPrice: null, standbyPass: false, mobileOrder: true, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-r-33", park: "TDL", area: "トゥモローランド", category: "レストラン", name: "ソフトランディング", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-r-34", park: "TDL", area: "トゥモローランド", category: "レストラン", name: "トゥモローランド・テラス", dpaPrice: null, standbyPass: false, mobileOrder: true, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-r-35", park: "TDL", area: "トゥモローランド", category: "レストラン", name: "プラズマ・レイズ・ダイナー", dpaPrice: null, standbyPass: false, mobileOrder: true, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-r-36", park: "TDL", area: "トゥモローランド", category: "レストラン", name: "パン・ギャラクティック・ピザ・ポート", dpaPrice: null, standbyPass: false, mobileOrder: true, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-r-37", park: "TDL", area: "トゥモローランド", category: "レストラン", name: "ビッグポップ", dpaPrice: null, standbyPass: false, mobileOrder: true, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+
+  // --- TDL キャラクターグリーティング ---
+  { id: "tdl-g-01", park: "TDL", area: "トゥーンタウン", category: "キャラクターグリーティング", name: "ミッキーの家とミート・ミッキー", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-g-02", park: "TDL", area: "トゥーンタウン", category: "キャラクターグリーティング", name: "ミニーのスタイルスタジオ", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-g-03", park: "TDL", area: "ウエスタンランド", category: "キャラクターグリーティング", name: "ウッドチャック・グリーティングトレイル（ドナルド）", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-g-04", park: "TDL", area: "ウエスタンランド", category: "キャラクターグリーティング", name: "ウッドチャック・グリーティングトレイル（デイジー）", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] },
+  { id: "tdl-g-05", park: "TDL", area: "ワールドバザール", category: "キャラクターグリーティング", name: "メインストリート・ハウス前（キャラクターグリーティング）", dpaPrice: null, standbyPass: false, mobileOrder: false, entryReception: false, timingType: "", imageUrl: "", officialUrl: "", maintenancePeriods: [] }
+];
+
+/**
+ * 施設マスターデータをスプレッドシートの「マスターデータ」シートに出力する関数
+ */
+function exportMasterToSheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetName = 'マスターデータ';
+  let sheet = ss.getSheetByName(sheetName);
+  
+  // シートが存在しない場合は新規作成
+  if (!sheet) {
+    sheet = ss.insertSheet(sheetName);
+  } else {
+    // 既存のシートがある場合は一旦クリア
+    sheet.clear();
+  }
+  
+  // 1行目のヘッダー
+  const headers = [
+    "ID", "パーク", "エリア", "カテゴリ", "施設名", 
+    "DPA価格", "スタンバイパス", "モバイルオーダー", "エントリー受付", "タイミングタイプ"
+  ];
+  
+  // オブジェクト配列からセル用の二次元配列に変換
+  const rows = facilityMaster.map(item => [
+    item.id,
+    item.park,
+    item.area,
+    item.category,
+    item.name,
+    item.dpaPrice !== null ? item.dpaPrice : "-",
+    item.standbyPass ? "対象" : "対象外",
+    item.mobileOrder ? "対象" : "対象外",
+    item.entryReception ? "対象" : "対象外",
+    item.timingType || "-"
+  ]);
+  
+  // ヘッダーとデータを一括でシートに書き込み
+  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  sheet.getRange(2, 1, rows.length, headers.length).setValues(rows);
+  
+  // 見栄えの調整（1行目を太字＆背景色変更、列幅の自動調整）
+  sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold").setBackground("#e6f2ff");
+  sheet.setFrozenRows(1);
+  for (let i = 1; i <= headers.length; i++) {
+    sheet.autoResizeColumn(i);
+  }
+  
+  Logger.log("「マスターデータ」シートへの出力が完了しました！");
+}
